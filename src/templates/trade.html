@@ -9,31 +9,75 @@
         function on_cancel_trade_clicked() {
             window.location.replace(window.location.origin);
         };
-        function on_create_trade_clicked() {
 
+        function on_create_trade_clicked() {
+            var sell = document.getElementById("sc").value;
+            if (!sell) {
+                alert("Sell Currency must be selected.");
+                return;
+            }
+
+            var sell_amount = document.getElementById("sell_amount").value;
+            if (!sell_amount) {
+                alert("The amount to sell must be a value greater than 0.");
+                return;
+            }
+
+            var buy = document.getElementById("bc").value;
+            if (!buy) {
+                alert("Buy Currency must be selected.");
+                return;
+            }
+
+            // If the above are true then the rest should be ok
+            var buy_amount = document.getElementById("buy_amount").value;
+            var rate = document.getElementById("ratelabel").innerText;
+
+            payload = {
+                "sell_currency": sell,
+                "sell_amount": sell_amount,
+                "buy_currency": buy,
+                "buy_amount": buy_amount,
+                "rate": parseFloat(rate),
+            };
+            console.log(payload)
+
+            target = window.location.origin + "/tradeapi/trade";
+            var resp = fetch(target, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }).then(response => response.json()).then(function submit_resp(resp) {
+                if (!resp["success"]) {
+                    alert("Failed to submit trade.");
+                }
+                else {
+                    alert("Trade successfully submitted.");
+                }
+            }).catch(function failed_submit() {
+                alert("Server Error: please contact support");
+            })
         };
+
         function currency_input_changed() {
             var sell = document.getElementById("sc");
             var buy = document.getElementById("bc");
 
-
             var base = sell.value;
             var symbol = buy.value;
-            console.log("base: " + base);
-            console.log("symbol: " + symbol);
             if (!base || !symbol) {
                 return;
             }
 
             var target = window.location.origin + "/rateapi/rate?base=" + base + "&symbol=" + symbol;
-            console.log(target);
             var resp = fetch(target).then(response => response.json()).then(function update_rate(resp) {
                 if (!resp["success"]) {
                     alert(resp);
                 }
-                console.log(resp);
                 var rate = resp["get_response"][symbol.toUpperCase()];
-                console.log(rate);
 
                 var label = document.getElementById("ratelabel");
                 label.innerText = rate;
@@ -51,11 +95,10 @@
         };
         function quantity_input_changed(node) {
             var quantity = node.value;
-            console.log("quantity: " + quantity);
 
             var buy_amount = document.getElementById("buy_amount");
             var rate = document.getElementById("ratelabel").innerText;
-            console.log(rate);
+
             if (!quantity || !rate) {
                 buy_amount.value = 0;
                 return
@@ -131,11 +174,6 @@
             <td><button onclick="on_cancel_trade_clicked()" style="float: right">Cancel</button></td>
         </tr>
     </table>
-
-
-
-
-
 
     {% endblock %}
 </body>

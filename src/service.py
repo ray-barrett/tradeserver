@@ -13,10 +13,10 @@ def index():
     def trade_to_json(trade):
         return {
             "trade_id": trade[0],
-            "buy_currency": trade[1],
-            "buy_amount": trade[2],
-            "sell_currency": trade[3],
-            "sell_amount": trade[4],
+            "sell_currency": trade[1],
+            "sell_amount": trade[2],
+            "buy_currency": trade[3],
+            "buy_amount": trade[4],
             "rate": trade[5],
             "date_booked": trade[6],
         }
