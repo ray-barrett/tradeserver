@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <title>View Trades</title>
+
+    <script>
+        function connect_to_trade_stream() {
+            var targetContainer = document.getElementById("trade_table");
+            var eventSource = new EventSource("/api/trade_stream")
+            eventSource.onmessage = function handleStream(e) {
+                alert(e);
+            };
+        };
+
+        function open_trade_ticket() {
+            window.location.replace(window.location.origin + "/trade");
+        }
+
+    </script>
+</head>
+
+<body>
+    {% extends "template.html" %}
+    {% block content %}
+
+    <p><strong>Booked Trades</strong></p>
+    <hr id="hr01" />
+    <button type="button" id="new_trade_button" onclick="open_trade_ticket()">New Trade</button>
+    <div></div>
+    <table id="trade_table" name="table_items" method="GET" action="/" table="trade_table">
+        <tr>
+            <th>Sell CCY</th>
+            <th>Sell Amount</th>
+            <th>Buy CCY</th>
+            <th>Buy Amount</th>
+            <th>Rate</th>
+            <th>Date Booked</th>
+        </tr>
+        {% for row in table_items %}
+        <tr id={{row.trade_id}}>
+            <td>{{row.sell_currency}}</td>
+            <td>{{row.sell_amount}}</td>
+            <td>{{row.buy_currency}}</td>
+            <td>{{row.buy_amount}}</td>
+            <td>{{row.rate}}</td>
+            <td>{{row.date_booked}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% endblock %}
+</body>
+
+</html>

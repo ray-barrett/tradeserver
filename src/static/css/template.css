@@ -1,0 +1,46 @@
+
+#page {
+    margin-left: 200px;
+}
+#maincontent {
+    float: right;
+    width: 100%;
+    background-color: #ffffff;
+}
+
+#menuleftcontent{
+    float: left;
+    width: 200px;
+    margin-left: -200px;
+    background-color: #CCCCCC;
+}
+#clearingdiv {
+    clear: both;
+}
+
+button#new_trade_button {
+    float: right;
+}
+
+table#trade_table{
+    border: 1px solid black;
+    width: 100%;
+}
+
+table#trade_table tr{
+    border: 1px solid black;
+}
+
+table#trade_table th{
+    border: 1px solid black;
+    background: lightgray;
+}
+
+hr#hr01 {
+    border: 3px solid black;
+}
+
+table#trade_ticket tr td {
+    text-align: center;
+    width: 50px;
+}
