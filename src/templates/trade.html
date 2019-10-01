@@ -7,10 +7,14 @@
 
     <script>
         function on_cancel_trade_clicked() {
+            // When trade cancelled, bring user back to ledger
             window.location.replace(window.location.origin);
         };
 
         function on_create_trade_clicked() {
+            /*
+             *  Ensure the ticket state is valid
+             */
             var sell = document.getElementById("sc").value;
             if (!sell) {
                 alert("Sell Currency must be selected.");
@@ -38,6 +42,7 @@
                 "sell_amount": sell_amount,
                 "buy_currency": buy,
                 "buy_amount": buy_amount,
+                // If here then we can assume rate is valid number
                 "rate": parseFloat(rate),
             };
             console.log(payload)
@@ -50,16 +55,22 @@
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
-            }).then(response => response.json()).then(function submit_resp(resp) {
-                if (!resp["success"]) {
-                    alert("Failed to submit trade.");
-                }
-                else {
-                    alert("Trade successfully submitted.");
-                }
-            }).catch(function failed_submit() {
-                alert("Server Error: please contact support");
             })
+                // Convert response to JSON
+                .then(response => response.json())
+                // Handle response payload
+                .then(function submit_resp(resp) {
+                    if (!resp["success"]) {
+                        alert("Failed to submit trade.");
+                    }
+                    else {
+                        alert("Trade successfully submitted.");
+                    }
+                })
+                // Notify of exception
+                .catch(function failed_submit() {
+                    alert("Server Error: please contact support");
+                })
         };
 
         function currency_input_changed() {
@@ -68,31 +79,40 @@
 
             var base = sell.value;
             var symbol = buy.value;
+            // Don't do anything until we have both a Sell and Buy Currency
             if (!base || !symbol) {
                 return;
             }
 
+
             var target = window.location.origin + "/rateapi/rate?base=" + base + "&symbol=" + symbol;
-            var resp = fetch(target).then(response => response.json()).then(function update_rate(resp) {
-                if (!resp["success"]) {
-                    alert(resp);
-                }
-                var rate = resp["get_response"][symbol.toUpperCase()];
+            // Since fetch returns a promise we will complete the second half of
+            // the work in the callback
+            var resp = fetch(target)
+                .then(response => response.json())
+                .then(function update_rate(resp) {
+                    if (!resp["success"]) {
+                        alert(resp);
+                    }
+                    var rate = resp["get_response"][symbol.toUpperCase()];
 
-                var label = document.getElementById("ratelabel");
-                label.innerText = rate;
+                    var label = document.getElementById("ratelabel");
+                    label.innerText = rate;
 
-                var sell_amount = document.getElementById("sell_amount");
-                sell_amount = sell_amount.value;
+                    var sell_amount = document.getElementById("sell_amount");
+                    sell_amount = sell_amount.value;
 
-                if (!sell_amount) {
-                    return;
-                }
+                    // If the sell amount is not set do nothing. It will be
+                    // updated later when a quantity is added
+                    if (!sell_amount) {
+                        return;
+                    }
 
-                var buy_amount = document.getElementById("buy_amount");
-                buy_amount.value = sell_amount * parseFloat(rate);
-            });
+                    var buy_amount = document.getElementById("buy_amount");
+                    buy_amount.value = sell_amount * parseFloat(rate);
+                });
         };
+
         function quantity_input_changed(node) {
             var quantity = node.value;
 
@@ -127,17 +147,22 @@
         </tr>
         <tr>
             <td>
+                <!-- Create Combobox and populate with the data provided from the flask service -->
                 <select name=combo_options id="sc" method="GET" action="/" list="sell_currencies"
                     onchange="currency_input_changed()">
                     <datalist id="sell_currencies">
+                        <!-- Insert an empty option as defalut selected -->
                         <option value="" SELECTED></option>
+                        <!-- Manage combobox options -->
                         {% for option in combo_options %}
                         <option value="{{option}}">{{option}}</option>
                         {% endfor %}
                     </datalist>
                 </select>
             </td>
+            <!-- |> Arrow symbol -->
             <td>&#9658;</td>
+            <!-- Placeholder Label to be used to display the Rate -->
             <td id="ratelabel"></td>
             <td>&#9658;</td>
             <td>

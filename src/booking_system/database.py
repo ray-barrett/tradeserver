@@ -25,7 +25,8 @@ _INSERT_TRADE = """INSERT INTO
 
 _SELECT_ALL = """SELECT
         id, sell_currency, sell_amount, buy_currency, buy_amount, rate, booked_at
-    FROM trades;
+    FROM trades
+    ORDER BY booked_at ASC;
 """
 
 _SELECT_ONE = """SELECT id, sell_currency, sell_amount, buy_currency, buy_amount, rate
@@ -57,6 +58,7 @@ class TradeDB(object):
 
     @staticmethod
     def _gen_trade_id():
+        # Generate a 7 character string to use as part of the trade ID
         return "".join(random.choices(string.ascii_uppercase + string.digits, k=7))
 
     def close(self):
@@ -82,10 +84,12 @@ class TradeDB(object):
         # Not guaranteed to prevent collisions but suits current purpose
         trade_id = "TR{}".format(self._gen_trade_id())
 
+        # Pass the SQL and arguments such that the cursor will prevent injection attacks
         self.cursor.execute(
             _INSERT_TRADE, (trade_id, s_curr, s_amnt, b_curr, b_amnt, rate)
         )
         self.conn.commit()
+        # Return the Trade ID so that it can be used if needed
         return trade_id
 
     def select(self, trade_id=None):
@@ -93,11 +97,13 @@ class TradeDB(object):
             items = self.cursor.execute(_SELECT_ALL)
         else:
             items = self.cursor.execute(_SELECT_ONE, (trade_id,))
+        # The cursor returns a generator, we'll return it as a list
         return list(items)
 
     def update(
         self, trade_id, s_curr=None, s_amnt=None, b_curr=None, b_amnt=None, rate=None
     ):
+        # If there is no information passed then we don't want to do anything
         if not any(s_curr, s_amnt, b_curr, b_amnt, rate):
             return False
 
@@ -112,12 +118,13 @@ class TradeDB(object):
         update_values = []
         update_field_template = "{} = ?"
 
+        # Build the query with the fields that have a value provided to update
         for field, value in field_pairs:
             if value is not None:
                 update_fields.append(update_field_template.format(field))
                 update_values.append(value)
 
-        # Add trade id to list of values to be inserted into the sql
+        # Add trade id to list to specify the item to be updated
         update_values.append(trade_id)
 
         sql = _UPDATE_TRADE.format(",".join(update_fields))

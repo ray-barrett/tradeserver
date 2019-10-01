@@ -1,12 +1,9 @@
 import enum
-import queue
 
 from flask import Blueprint, jsonify, request
 from flask.views import MethodView
 
 import fixer
-
-TRADE_QUEUE = queue.Queue(maxsize=0)
 
 api = Blueprint("rateapi", __name__, url_prefix="/rateapi")
 
@@ -16,6 +13,8 @@ class Code(enum.Enum):
     NOOP = 1  # Request payload is No-op
 
 
+# RateApi REST Endpoint to wrap calls to Fixer as we may want to switch rate
+# provider in the future
 class RateApi(MethodView):
     def get(self):
         fxr = fixer.Fixer()
@@ -28,4 +27,5 @@ class RateApi(MethodView):
 
 
 rateapi_view = RateApi.as_view("rateapi")
+# Register Endpoint with GET method
 api.add_url_rule("/rate", methods=["GET"], view_func=rateapi_view)

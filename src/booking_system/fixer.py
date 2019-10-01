@@ -1,5 +1,6 @@
 import requests
 
+# Usually wouldn't be kept in the Repo but it's fine for demo
 API_KEY = "63ede3ee0cd877e887d26eb8ec3664a2"
 ENDPOINT_TEMPLATE = "http://data.fixer.io/api/{}?access_key=" + API_KEY
 
@@ -10,6 +11,9 @@ class Fixer(object):
 
     @staticmethod
     def _get_success_json(url):
+        """
+        Method to handle the response from Fixer
+        """
         payload = requests.get(url)
         if not payload.status_code == 200:
             raise RuntimeError(
@@ -26,6 +30,7 @@ class Fixer(object):
 
     @property
     def symbols(self):
+        # Cache symbols
         if self._symbols is None:
             url = ENDPOINT_TEMPLATE.format("symbols")
             data = self._get_success_json(url)

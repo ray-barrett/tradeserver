@@ -6,18 +6,23 @@ from flask.views import MethodView
 
 import database
 
+# Trade Queue For transferring the
 TRADE_QUEUE = queue.Queue(maxsize=0)
 
+# Blueprint to be provided to the Service as a REST Endpoint
 api = Blueprint("tradeapi", __name__, url_prefix="/tradeapi")
 
+# Database name could also be provided as a command line argument at start up
 TRADE_DATABASE = "trades.db"
 
 
+# Status codes Enum for future Enumerations to be added (such as in error cases)
 class Code(enum.Enum):
     OK = 0
     NOOP = 1  # Request payload is No-op
 
 
+# REST Endpoint Class
 class TradeApi(MethodView):
     def get(self, trade_id):
         with database.TradeDB(TRADE_DATABASE) as db:
@@ -34,6 +39,21 @@ class TradeApi(MethodView):
                 req["buy_amount"],
                 req["rate"],
             )
+
+            trade_data = db.select(trade_id=data)[0]
+
+            # Marshal data to be passed to the SSE stream
+            trade = {
+                "trade_id": trade_data[0],
+                "sell_currency": trade_data[1],
+                "sell_amount": trade_data[2],
+                "buy_currency": trade_data[3],
+                "buy_amount": trade_data[4],
+                "rate": trade_data[5],
+            }
+            # Put trade in SSE Stream
+            TRADE_QUEUE.put(trade)
+
         return jsonify({"success": True, "post_response": {"id": data}})
 
     def put(self, trade_id):
@@ -62,20 +82,13 @@ class TradeApi(MethodView):
 
 
 tradeapi_view = TradeApi.as_view("tradeapi")
+# Register POST endpoint as URL
 api.add_url_rule("/trade", methods=["POST"], view_func=tradeapi_view)
+# Register GET Endpoint as URL. Default allows for overlap with /trade/<trade_id>
 api.add_url_rule(
     "/trade", methods=["GET"], defaults={"trade_id": None}, view_func=tradeapi_view
 )
+# Register Endpoint for working in specific trade
 api.add_url_rule(
     "/trade/<trade_id>", methods=["GET", "PUT", "DELETE"], view_func=tradeapi_view
 )
-
-
-@api.route("/trade_stream")
-def trade_stream():
-    def event_stream():
-        while True:
-            item = TRADE_QUEUE.get()
-            yield "data: {}\n\n".format(jsonify(item))
-
-        return Response(event_stream(), mimetype="text/event-stream")
