@@ -4,6 +4,7 @@ import booking_system.database as db
 import booking_system.fixer as fixer
 import booking_system.rateapi as rateapi
 import booking_system.tradeapi as tradeapi
+import booking_system.database as database
 
 app = Flask(__name__)
 
@@ -56,5 +57,6 @@ app.register_blueprint(tradeapi.api)
 app.register_blueprint(rateapi.api)
 
 if __name__ == "__main__":
-    with app.app_context():
-        app.run(debug=True, threaded=True)
+    # Ensure the Trade Database is initialised
+    database.TradeDB(tradeapi.TRADE_DATABASE, init_db=True)
+    app.run(debug=True, threaded=True)
